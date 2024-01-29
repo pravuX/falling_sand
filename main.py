@@ -2,15 +2,18 @@ import pygame
 from random import choice, random
 from pygame.math import clamp
 
-grid_width = 1000
-grid_height = 800
+grid_width = 1500
+grid_height = 1000
 # grid_width = 20
 # grid_height = 30
-grid_dim = 5
+grid_dim = 8
 
 grid_cols = grid_width // grid_dim
 grid_rows = grid_height // grid_dim
 grid = []
+velocity = []
+spread_velocity = 4
+gravity = 0.5
 
 empty = pygame.Color(255, 255, 255)
 wood = pygame.Color(127, 34, 1)
@@ -58,10 +61,12 @@ def brush(keys, m_left, m_right, mouse_x, mouse_y):
                             elif m_right:
                                 new_color = wood
                             grid[neighbor_col][neighbor_row] = new_color
+                            velocity[neighbor_col][neighbor_row] = 1
 
                         elif grid[neighbor_col][neighbor_row] == wood:
                             if m_left and keys[pygame.K_e]:
                                 grid[neighbor_col][neighbor_row] = empty
+                                velocity[neighbor_col][neighbor_row] = 0
 
 
 def main():
@@ -71,12 +76,15 @@ def main():
     screen = pygame.display.set_mode((grid_width, grid_height))
     clock = pygame.time.Clock()
     running = True
+    pause = False
     fps = 1000
 
     for col in range(grid_cols):
         grid.append(list())
+        velocity.append(list())
         for row in range(grid_rows):
             grid[col].append(empty)
+            velocity[col].append(0)
 
     while running:
         clock.tick(fps)
@@ -86,19 +94,33 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT or keys[pygame.K_q]:
                 running = False
+            if keys[pygame.K_p]:
+                pause = not pause
 
         draw_grid(screen)
 
         m_left, _, m_right = pygame.mouse.get_pressed()
         brush(keys, m_left, m_right, mouse_x, mouse_y)
 
+        if pause:
+            continue
+
         for row in range(grid_rows - 2, -1, -1):
             for col in range(grid_cols - 1, -1, -1):
                 color = grid[col][row]
+                cell_velocity = velocity[col][row]
 
-                row_below = clamp(row + 1, 0, grid_rows - 1)
+                row_below = int(clamp(row + 1, 0, grid_rows - 1))
                 col_right = int(clamp(col + 1, 0, grid_cols - 1))
                 col_left = int(clamp(col - 1, 0, grid_cols - 1))
+
+                row_furthest = row_below
+                row_dest = int(clamp(row + cell_velocity, 0, grid_rows - 1))
+                for row_next in range(row_below, row_dest, 1):
+                    if grid[col][row_next] != empty:
+                        break
+                    row_furthest = row_next
+                row_below = row_furthest
 
                 color_below = grid[col][row_below]
                 color_right = grid[col_right][row]
@@ -112,6 +134,8 @@ def main():
                     if color_below == empty:
                         grid[col][row] = empty
                         grid[col][row_below] = color
+                        velocity[col][row] = 0
+                        velocity[col][row_below] = cell_velocity + gravity
                     elif slide >= 0.8:
                         if color_below_l == empty and color_below_r == empty:
                             if slide >= 0.4:
@@ -122,10 +146,14 @@ def main():
                         if color_below_l == empty:
                             grid[col][row] = empty
                             grid[col_left][row_below] = color
+                            velocity[col][row] = 0
+                            velocity[col_left][row_below] = cell_velocity + gravity
 
                         elif color_below_r == empty:
                             grid[col][row] = empty
                             grid[col_right][row_below] = color
+                            velocity[col][row] = 0
+                            velocity[col_right][row_below] = cell_velocity + gravity
 
                         elif color == water:
                             if color_left == empty and color_right == empty:
@@ -133,6 +161,24 @@ def main():
                                     color_left = wood
                                 else:
                                     color_right = wood
+
+                            col_furthest_l = col_left
+                            col_dest_l = int(
+                                clamp(col - spread_velocity, 0, grid_cols - 1))
+                            for col_next in range(col_left, col_dest_l, 1):
+                                if grid[col_next][row] != empty or grid[col_next][row_below] != water:
+                                    break
+                                col_furthest_l = col_next
+                            col_left = col_furthest_l
+
+                            col_furthest_r = col_right
+                            col_dest_r = int(
+                                clamp(col + spread_velocity, 0, grid_cols - 1))
+                            for col_next in range(col_right, col_dest_r, 1):
+                                if grid[col_next][row] != empty or grid[col_next][row_below] != water:
+                                    break
+                                col_furthest_r = col_next
+                            col_right = col_furthest_r
 
                             if color_left == empty:
                                 grid[col][row] = empty
