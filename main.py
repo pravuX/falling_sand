@@ -2,17 +2,15 @@ import pygame
 from random import choice, random
 from pygame.math import clamp
 
-grid_width = 1500
-grid_height = 1000
-# grid_width = 20
-# grid_height = 30
-grid_dim = 8
+grid_width = 800
+grid_height = 600
+grid_dim = 5
 
 grid_cols = grid_width // grid_dim
 grid_rows = grid_height // grid_dim
 grid = []
 velocity = []
-spread_velocity = 10
+spread_velocity = 3
 gravity = 0.25
 
 empty = pygame.Color(255, 255, 255)
