@@ -1,58 +1,70 @@
 import pygame
-from random import random, choice
+from random import choice, random
 from pygame.math import clamp
 
+grid_width = 1000
+grid_height = 800
+# grid_width = 20
+# grid_height = 30
+grid_dim = 5
 
-class Cell():
-    def __init__(self, x, y, color):
-        self.x = x  # col
-        self.y = y  # row
-        # this serves as the type of the cell
-        # empty cells have white color
-        # sand particles have one of the colors from the colors array
-        # wood particles have "wood" color
-        # water particles have "water" color
-        self.color = color
+grid_cols = grid_width // grid_dim
+grid_rows = grid_height // grid_dim
+grid = []
 
-    def get_pos(self):
-        return self.x, self.y
+empty = pygame.Color(255, 255, 255)
+wood = pygame.Color(127, 34, 1)
+water = pygame.Color(35, 137, 218)
+
+colors = [
+    pygame.Color(246, 215, 176),
+    pygame.Color(242, 210, 169),
+    pygame.Color(236, 204, 162),
+    pygame.Color(231, 196, 150),
+    pygame.Color(225, 191, 146)
+]
 
 
-def hsv_to_rgb(h, s, v, a):
-    a = int(255*a)
-    if s:
-        if h == 1.0:
-            h = 0.0
-        i = int(h*6.0)
-        f = h*6.0 - i
+def draw_grid(screen):
+    for row in range(grid_rows):
+        for col in range(grid_cols):
+            color = grid[col][row]
+            sqr_x = col * grid_dim
+            sqr_y = row * grid_dim
+            sqr = pygame.Rect(sqr_x, sqr_y, grid_dim, grid_dim)
+            pygame.draw.rect(screen, color, sqr)
+            # pygame.draw.rect(screen, "black", sqr, 1)
 
-        w = int(255*(v * (1.0 - s)))
-        q = int(255*(v * (1.0 - s * f)))
-        t = int(255*(v * (1.0 - s * (1.0 - f))))
-        v = int(255*v)
 
-        if i == 0:
-            return (v, t, w, a)
-        if i == 1:
-            return (q, v, w, a)
-        if i == 2:
-            return (w, v, t, a)
-        if i == 3:
-            return (w, q, v, a)
-        if i == 4:
-            return (t, w, v, a)
-        if i == 5:
-            return (v, w, q, a)
-    else:
-        v = int(255*v)
-        return (v, v, v, a)
+def brush(keys, m_left, m_right, mouse_x, mouse_y):
+    for row in range(grid_rows):
+        for col in range(grid_cols):
+            sqr_x = col * grid_dim
+            sqr_y = row * grid_dim
+            if (mouse_x >= sqr_x and mouse_x <= (sqr_x + grid_dim) and
+                    mouse_y >= sqr_y and mouse_y <= (sqr_y + grid_dim)):
+                for j in range(-1, 2):
+                    for i in range(-1, 2):
+                        neighbor_col = int(
+                            clamp(col + i, 0, grid_cols - 1))
+                        neighbor_row = int(
+                            clamp(row + j, 0, grid_rows - 1))
+                        if grid[neighbor_col][neighbor_row] == empty:
+                            new_color = empty
+                            if m_left and not keys[pygame.K_e]:
+                                new_color = choice(colors)
+                                if keys[pygame.K_w]:
+                                    new_color = water
+                            elif m_right:
+                                new_color = wood
+                            grid[neighbor_col][neighbor_row] = new_color
+
+                        elif grid[neighbor_col][neighbor_row] == wood:
+                            if m_left and keys[pygame.K_e]:
+                                grid[neighbor_col][neighbor_row] = empty
 
 
 def main():
-    grid_width = 512
-    grid_height = 512
-    grid_dim = 128
-    grid_size = grid_width // grid_dim
 
     pygame.init()
 
@@ -60,24 +72,11 @@ def main():
     clock = pygame.time.Clock()
     running = True
     fps = 1000
-    empty = pygame.Color(255, 255, 255)
-    wood = pygame.Color(127, 34, 1)
-    water = pygame.Color(35, 137, 218)
-    gravity = 1
 
-    grid = []
-    colors = [
-        pygame.Color(246, 215, 176),
-        pygame.Color(242, 210, 169),
-        pygame.Color(236, 204, 162),
-        pygame.Color(231, 196, 150),
-        pygame.Color(225, 191, 146)
-    ]
-    # color = 0
-
-    for col in range(0, grid_dim):
-        for row in range(0, grid_dim):
-            grid.append(Cell(col, row, empty))
+    for col in range(grid_cols):
+        grid.append(list())
+        for row in range(grid_rows):
+            grid[col].append(empty)
 
     while running:
         clock.tick(fps)
@@ -88,110 +87,59 @@ def main():
             if event.type == pygame.QUIT or keys[pygame.K_q]:
                 running = False
 
+        draw_grid(screen)
+
         m_left, _, m_right = pygame.mouse.get_pressed()
-        for cell_idx in range(0, len(grid)):
-            cell = grid[cell_idx]
-            cell_col, cell_row = cell.get_pos()
+        brush(keys, m_left, m_right, mouse_x, mouse_y)
 
-            cell_col_scaled = cell_col * grid_size
-            cell_row_scaled = cell_row * grid_size
-            cell_color = cell.color
+        for row in range(grid_rows - 2, -1, -1):
+            for col in range(grid_cols - 1, -1, -1):
+                color = grid[col][row]
 
-            rect = pygame.Rect(
-                cell_col_scaled, cell_row_scaled, grid_size, grid_size)
-            pygame.draw.rect(screen, cell.color, rect)
-            # pygame.draw.rect(screen, "black", rect, 1)
+                row_below = clamp(row + 1, 0, grid_rows - 1)
+                col_right = int(clamp(col + 1, 0, grid_cols - 1))
+                col_left = int(clamp(col - 1, 0, grid_cols - 1))
 
-            if (mouse_x >= cell_col_scaled and mouse_x <= (cell_col_scaled + grid_size) and
-                    mouse_y >= cell_row_scaled and mouse_y <= (cell_row_scaled + grid_size)):
-                for j in range(-1, 2):
-                    for i in range(-1, 2):
-                        neighbor_col = clamp(cell_col + i, 0, grid_dim-1)
-                        neighbor_row = clamp(cell_row + j, 0, grid_dim-1)
+                color_below = grid[col][row_below]
+                color_right = grid[col_right][row]
+                color_left = grid[col_left][row]
+                color_below_l = grid[col_left][row_below]
+                color_below_r = grid[col_right][row_below]
 
-                        neighbor_idx = int(
-                            neighbor_col * grid_dim + neighbor_row)
+                slide = random()
 
-                        if grid[neighbor_idx].color == empty:
-                            new_color = empty
-                            if m_left and not keys[pygame.K_e]:
-                                new_color = choice(colors)
-                                if keys[pygame.K_w]:
-                                    new_color = water
-                            elif m_right:
-                                new_color = pygame.Color(wood)
+                if color != empty and color != wood:
+                    if color_below == empty:
+                        grid[col][row] = empty
+                        grid[col][row_below] = color
+                    elif slide >= 0.8:
+                        if color_below_l == empty and color_below_r == empty:
+                            if slide >= 0.4:
+                                color_below_l = wood  # not empty
+                            else:
+                                color_below_r = wood  # not empty
 
-                            grid[neighbor_idx].color = pygame.Color(
-                                *new_color)
-                            grid[neighbor_idx].velocity = 1
+                        if color_below_l == empty:
+                            grid[col][row] = empty
+                            grid[col_left][row_below] = color
 
-                        elif grid[neighbor_idx].color == wood:
-                            if m_left and keys[pygame.K_e]:
-                                grid[neighbor_idx].color = empty
-                                grid[neighbor_idx].velocity = 0
+                        elif color_below_r == empty:
+                            grid[col][row] = empty
+                            grid[col_right][row_below] = color
 
-        for col in range(0, grid_dim):
-            for row in range(grid_dim - 2, -1, -1):
-                cell_idx = row + col * grid_dim
-                cell_color = grid[cell_idx].color
-
-                if cell_color != empty and cell_color != wood:
-                    row_below = int(
-                        clamp(row + 1, 0, grid_dim - 1))
-                    cell_below_idx = row_below + col * grid_dim
-
-                    col_right = int(
-                        clamp(col + 1, 0, grid_dim - 1))
-                    col_left = int(clamp(col - 1, 0, grid_dim - 1))
-                    cell_right_idx = row + col_right * grid_dim
-                    cell_left_idx = row + col_left * grid_dim
-                    cell_below_right_idx = row_below + col_right * grid_dim
-                    cell_below_left_idx = row_below + col_left * grid_dim
-
-                    below_is_empty = grid[cell_below_idx].color == empty
-                    below_right_is_empty = grid[cell_below_right_idx].color == empty
-                    below_left_is_empty = grid[cell_below_left_idx].color == empty
-                    right_is_empty = grid[cell_right_idx].color == empty
-                    left_is_empty = grid[cell_left_idx].color == empty
-
-                    slide = random()
-
-                    # if grid[cell_below_idx].color == empty:
-                    if below_is_empty:
-                        grid[cell_below_idx].color = cell_color
-                        grid[cell_idx].color = empty
-
-                    elif slide > 0.8:
-
-                        # if (below_left_is_empty and below_right_is_empty):
-                        #     if slide < 0.5:
-                        #         below_left_is_empty = False
-                        #     else:
-                        #         below_right_is_empty = False
-
-                        if below_left_is_empty:
-                            grid[cell_below_left_idx].color = cell_color
-                            grid[cell_idx].color = empty
-
-                        elif below_right_is_empty:
-                            grid[cell_below_right_idx].color = cell_color
-                            grid[cell_idx].color = empty
-
-                        elif cell_color == water:
-
-                            if (left_is_empty and right_is_empty):
+                        elif color == water:
+                            if color_left == empty and color_right == empty:
                                 if slide < 0.4:
-                                    left_is_empty = False
+                                    color_left = wood
                                 else:
-                                    right_is_empty = False
+                                    color_right = wood
 
-                            if left_is_empty:
-                                grid[cell_left_idx].color = cell_color
-                                grid[cell_idx].color = empty
-
-                            elif right_is_empty:
-                                grid[cell_right_idx].color = cell_color
-                                grid[cell_idx].color = empty
+                            if color_left == empty:
+                                grid[col][row] = empty
+                                grid[col_left][row] = color
+                            elif color_right == empty:
+                                grid[col][row] = empty
+                                grid[col_right][row] = color
 
         pygame.display.flip()
 
