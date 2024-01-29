@@ -12,8 +12,8 @@ grid_cols = grid_width // grid_dim
 grid_rows = grid_height // grid_dim
 grid = []
 velocity = []
-spread_velocity = 4
-gravity = 0.5
+spread_velocity = 10
+gravity = 0.25
 
 empty = pygame.Color(255, 255, 255)
 wood = pygame.Color(127, 34, 1)
