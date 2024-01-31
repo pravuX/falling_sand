@@ -1,9 +1,10 @@
 import pygame
 from random import choice, random
 from pygame.math import clamp
+from math import floor
 
-grid_width = 800
-grid_height = 600
+grid_width = 1000
+grid_height = 800
 grid_dim = 5
 
 grid_cols = grid_width // grid_dim
@@ -38,33 +39,29 @@ def draw_grid(screen):
 
 
 def brush(keys, m_left, m_right, mouse_x, mouse_y):
-    for row in range(grid_rows):
-        for col in range(grid_cols):
-            sqr_x = col * grid_dim
-            sqr_y = row * grid_dim
-            if (mouse_x >= sqr_x and mouse_x <= (sqr_x + grid_dim) and
-                    mouse_y >= sqr_y and mouse_y <= (sqr_y + grid_dim)):
-                for j in range(-1, 2):
-                    for i in range(-1, 2):
-                        neighbor_col = int(
-                            clamp(col + i, 0, grid_cols - 1))
-                        neighbor_row = int(
-                            clamp(row + j, 0, grid_rows - 1))
-                        if grid[neighbor_col][neighbor_row] == empty:
-                            new_color = empty
-                            if m_left and not keys[pygame.K_e]:
-                                new_color = choice(colors)
-                                if keys[pygame.K_w]:
-                                    new_color = water
-                            elif m_right:
-                                new_color = wood
-                            grid[neighbor_col][neighbor_row] = new_color
-                            velocity[neighbor_col][neighbor_row] = 1
+    col = floor(mouse_x / grid_dim)
+    row = floor(mouse_y / grid_dim)
+    for j in range(-1, 2):
+        for i in range(-1, 2):
+            neighbor_col = int(
+                clamp(col + i, 0, grid_cols - 1))
+            neighbor_row = int(
+                clamp(row + j, 0, grid_rows - 1))
+            if grid[neighbor_col][neighbor_row] == empty:
+                new_color = empty
+                if m_left and not keys[pygame.K_e]:
+                    new_color = choice(colors)
+                    if keys[pygame.K_w]:
+                        new_color = water
+                elif m_right:
+                    new_color = wood
+                grid[neighbor_col][neighbor_row] = new_color
+                velocity[neighbor_col][neighbor_row] = 1
 
-                        elif grid[neighbor_col][neighbor_row] == wood:
-                            if m_left and keys[pygame.K_e]:
-                                grid[neighbor_col][neighbor_row] = empty
-                                velocity[neighbor_col][neighbor_row] = 0
+            elif grid[neighbor_col][neighbor_row] == wood:
+                if m_left and keys[pygame.K_e]:
+                    grid[neighbor_col][neighbor_row] = empty
+                    velocity[neighbor_col][neighbor_row] = 0
 
 
 def main():
