@@ -6,6 +6,10 @@ This is a **cellular automata** based simulation of sand and other particles lik
 
 This simulation requires [pygame](https://www.pygame.org/news) to run.
 
+```shell
+$ python main.py
+```
+
 ## Controls
 
 | Key            | Function   |
@@ -14,10 +18,6 @@ This simulation requires [pygame](https://www.pygame.org/news) to run.
 | `LClick` + `w` | Draw Water |
 | `LClick` + `e` | Eraser     |
 | `RClick`       | Draw Wood  |
-
-```shell
-$ python main.py
-```
 
 ## Screenshot
 
