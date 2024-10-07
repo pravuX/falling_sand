@@ -1,7 +1,6 @@
 import pygame
 from random import choice, random
 from pygame.math import clamp
-from math import floor
 
 grid_width = 1000
 grid_height = 800
@@ -11,7 +10,7 @@ grid_cols = grid_width // grid_dim
 grid_rows = grid_height // grid_dim
 grid = []
 velocity = []
-spread_velocity = 3
+spread_velocity = 5
 gravity = 0.25
 
 empty = pygame.Color(255, 255, 255)
@@ -38,11 +37,11 @@ def draw_grid(screen):
             # pygame.draw.rect(screen, "black", sqr, 1)
 
 
-def brush(keys, m_left, m_right, mouse_x, mouse_y):
-    col = floor(mouse_x / grid_dim)
-    row = floor(mouse_y / grid_dim)
-    for j in range(-1, 2):
-        for i in range(-1, 2):
+def brush(keys, m_left, m_right, mouse_x, mouse_y, size):
+    col = mouse_x // grid_dim
+    row = mouse_y // grid_dim
+    for j in range(-size, size + 1):
+        for i in range(-size, size + 1):
             neighbor_col = int(
                 clamp(col + i, 0, grid_cols - 1))
             neighbor_row = int(
@@ -73,6 +72,7 @@ def main():
     running = True
     pause = False
     fps = 1000
+    brush_size = 5
 
     for col in range(grid_cols):
         grid.append(list())
@@ -91,11 +91,15 @@ def main():
                 running = False
             if keys[pygame.K_p]:
                 pause = not pause
+            if keys[pygame.K_UP]:
+                brush_size = clamp(brush_size + 1, 1, 10)
+            if keys[pygame.K_DOWN]:
+                brush_size = clamp(brush_size - 1, 1, 10)
 
         draw_grid(screen)
 
         m_left, _, m_right = pygame.mouse.get_pressed()
-        brush(keys, m_left, m_right, mouse_x, mouse_y)
+        brush(keys, m_left, m_right, mouse_x, mouse_y, int(brush_size))
 
         if pause:
             continue
