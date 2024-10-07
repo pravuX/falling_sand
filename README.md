@@ -10,7 +10,7 @@ This simulation requires [pygame](https://www.pygame.org/news) to run.
 $ python main.py
 ```
 
-## Controls
+### Controls
 
 | Key            | Function   |
 | -------------- | ---------- |
@@ -19,7 +19,7 @@ $ python main.py
 | `LClick` + `e` | Eraser     |
 | `RClick`       | Draw Wood  |
 
-## Screenshot
+## Screenshots
 
 ### Sand, Wood and Water
 
